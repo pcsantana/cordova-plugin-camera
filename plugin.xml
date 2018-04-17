@@ -42,8 +42,6 @@
         <clobbers target="CameraPopoverOptions" />
     </js-module>
 
-
-
     <js-module src="www/Camera.js" name="camera">
         <clobbers target="navigator.camera" />
     </js-module>
@@ -57,6 +55,9 @@
         </config-file>
         <config-file target="AndroidManifest.xml" parent="/*">
             <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+            <uses-permission android:name="android.permission.CAMERA" />
+            <uses-feature android:name="android.hardware.camera" />
+            <uses-feature android:name="android.hardware.camera.autofocus" />
         </config-file>
         <config-file target="AndroidManifest.xml" parent="application">
           <provider
@@ -68,6 +69,16 @@
                   android:name="android.support.FILE_PROVIDER_PATHS"
                   android:resource="@xml/camera_provider_paths"/>
           </provider>
+          <activity
+            android:name="org.apache.cordova.camera.CameraActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.InAppTheme">
+          </activity>
+          <activity
+            android:name="org.apache.cordova.camera.PreviewActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.InAppTheme">
+          </activity>
         </config-file>
 
         <source-file src="src/android/CameraLauncher.java" target-dir="src/org/apache/cordova/camera" />
@@ -77,11 +88,27 @@
         <source-file src="src/android/FileProvider.java" target-dir="src/org/apache/cordova/camera" />
         <source-file src="src/android/xml/camera_provider_paths.xml" target-dir="res/xml" />
 
+        <!-- InAppCamera -->
+        <source-file src="src/android/CameraActivity.java" target-dir="src/org/apache/cordova/camera" />
+        <source-file src="src/android/camera_layout.xml" target-dir="res/layout" />
+        <source-file src="src/android/PreviewActivity.java" target-dir="src/org/apache/cordova/camera" />
+        <source-file src="src/android/preview_layout.xml" target-dir="res/layout" />
+        <source-file src="src/android/styles.xml" target-dir="res/values" />
+        <source-file src="res/ic_check_circle_white_24dp.png" target-dir="res/drawable" />
+        <source-file src="res/ic_replay_white_24dp.png" target-dir="res/drawable" />
+        <source-file src="res/btn_shot.png" target-dir="res/drawable" />
+        <source-file src="res/btn_flip.png" target-dir="res/drawable" />
+        <source-file src="res/btn_flash_on.png" target-dir="res/drawable" />
+        <source-file src="res/btn_flash_no.png" target-dir="res/drawable" />
+        <source-file src="res/btn_flash_auto.png" target-dir="res/drawable" />
+        <source-file src="res/viewfinder.png" target-dir="res/drawable" />
+
         <js-module src="www/CameraPopoverHandle.js" name="CameraPopoverHandle">
             <clobbers target="CameraPopoverHandle" />
           </js-module>
 
-        <framework src="com.android.support:support-v4:24.1.1+" />
+        <framework src="com.android.support:support-v4:26.+" />
+        <framework src="com.github.bumptech.glide:glide:3.7.0" />
 
       </platform>
 
@@ -152,12 +179,12 @@
         <js-module src="www/CameraPopoverHandle.js" name="CameraPopoverHandle">
             <clobbers target="CameraPopoverHandle" />
         </js-module>
-        
+
         <header-file src="src/osx/CDVCamera.h" />
         <source-file src="src/osx/CDVCamera.m" />
-                
+
         <framework src="Quartz.framework" />
         <framework src="AppKit.framework" />
     </platform>
-    
+
 </plugin>

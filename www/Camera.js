@@ -149,8 +149,31 @@ cameraExport.getPicture = function (successCallback, errorCallback, options) {
     var popoverOptions = getValue(options.popoverOptions, null);
     var cameraDirection = getValue(options.cameraDirection, Camera.Direction.BACK);
 
-    var args = [quality, destinationType, sourceType, targetWidth, targetHeight, encodingType,
-        mediaType, allowEdit, correctOrientation, saveToPhotoAlbum, popoverOptions, cameraDirection];
+    //InAppCamera
+    var imageTitle = getValue(options.imageTitle, "");
+    var confirmPicture = getValue(options.confirmPicture, true);
+    var titleFontSize = getValue(options.titleFontSize, -1);
+    var titleFontColor = getValue(options.titleFontColor, "");
+    var titleBackgroundColor = getValue(options.titleBackgroundColor, "");
+
+    var args = [
+        quality,
+        destinationType,
+        sourceType,
+        targetWidth,
+        targetHeight,
+        encodingType,
+        mediaType,
+        allowEdit,
+        correctOrientation,
+        saveToPhotoAlbum,
+        popoverOptions,
+        cameraDirection,
+        imageTitle,
+        confirmPicture,
+        titleFontSize,
+        titleFontColor,
+        titleBackgroundColor];
 
     exec(successCallback, errorCallback, 'Camera', 'takePicture', args);
     // XXX: commented out

@@ -32,7 +32,6 @@ import java.util.Date;
 import org.apache.cordova.BuildHelper;
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaPlugin;
-import org.apache.cordova.CordovaResourceApi;
 import org.apache.cordova.LOG;
 import org.apache.cordova.PermissionHelper;
 import org.apache.cordova.PluginResult;
@@ -40,8 +39,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 
 import android.Manifest;
-import android.annotation.TargetApi;
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.content.ActivityNotFoundException;
 import android.content.ContentValues;
 import android.content.Context;
@@ -55,16 +54,14 @@ import android.media.ExifInterface;
 import android.media.MediaScannerConnection;
 import android.media.MediaScannerConnection.MediaScannerConnectionClient;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.provider.DocumentsContract;
 import android.provider.MediaStore;
-import android.provider.OpenableColumns;
 import android.support.v4.content.FileProvider;
 import android.util.Base64;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
+import android.util.Log;
 
 /**
  * This class launches the camera view, allows the user to take a picture, closes the camera view,
@@ -113,6 +110,14 @@ public class CameraLauncher extends CordovaPlugin implements MediaScannerConnect
     private boolean orientationCorrected;   // Has the picture's orientation been corrected
     private boolean allowEdit;              // Should we allow the user to crop the image.
 
+    //InAppCamera
+    private int cameraDirection;            // Indicate camera direction, front or back.
+	private String imageTitle;              // Title to show in camera activity if specified.
+	private boolean confirmPicture;         // Should we allow the user to confirm captured picture.
+	private int titleFontSize;            	// Indicate the font size to use on camera title.
+	private String titleFontColor;          // Indicate the font color to use on camera title.
+	private String titleBackgroundColor;    // Indicate the background color to use on camera title.
+
     protected final static String[] permissions = { Manifest.permission.CAMERA, Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE };
 
     public CallbackContext callbackContext;
@@ -150,6 +155,11 @@ public class CameraLauncher extends CordovaPlugin implements MediaScannerConnect
             this.encodingType = JPEG;
             this.mediaType = PICTURE;
             this.mQuality = 50;
+            //InAppCamera
+            this.imageTitle = "";
+            this.titleFontSize = -1;
+            this.titleFontColor = "";
+            this.titleBackgroundColor = "";
 
             //Take the values from the arguments if they're not already defined (this is tricky)
             this.destType = args.getInt(1);
@@ -162,6 +172,23 @@ public class CameraLauncher extends CordovaPlugin implements MediaScannerConnect
             this.allowEdit = args.getBoolean(7);
             this.correctOrientation = args.getBoolean(8);
             this.saveToPhotoAlbum = args.getBoolean(9);
+
+            //InAppCamera
+            this.cameraDirection = args.getInt(11);
+            this.imageTitle = args.getString(12);
+            this.confirmPicture = args.getBoolean(13);
+            this.titleFontSize = args.getInt(14);
+            this.titleFontColor = args.getString(15);
+            this.titleBackgroundColor = args.getString(16);
+
+            if (imageTitle == null)
+				imageTitle = "";
+
+			if (titleFontColor == null)
+				titleFontColor = "";
+
+			if (titleBackgroundColor == "")
+				titleBackgroundColor = "";
 
             // If the user specifies a 0 or smaller width/height
             // make it -1 so later comparisons succeed
@@ -284,38 +311,65 @@ public class CameraLauncher extends CordovaPlugin implements MediaScannerConnect
         }
     }
 
-    public void takePicture(int returnType, int encodingType)
-    {
+    private boolean deviceHasLowMemory() {
+        ActivityManager activityManager = (ActivityManager) this.cordova.getActivity().getApplicationContext().getSystemService(Context.ACTIVITY_SERVICE);
+        ActivityManager.MemoryInfo memoryInfo = new ActivityManager.MemoryInfo();
+        activityManager.getMemoryInfo(memoryInfo);
+        long deviceMemory = memoryInfo.totalMem / 1048576L;
+        return deviceMemory < 1500 || memoryInfo.lowMemory;
+    }
+
+    public void takePicture(int returnType, int encodingType) {
         // Save the number of images currently on disk for later
         this.numPics = queryImgDB(whichContentStore()).getCount();
 
-        // Let's use the intent and see what happens
-        Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        //If device has low memory, open InAppCamera to prevent crash
+        if(deviceHasLowMemory()) {
+            // Let's use the intent and see what happens
+            Intent intent = new Intent(this.cordova.getActivity().getApplicationContext(), CameraActivity.class);
 
-        // Specify file so that large image is captured and returned
-        File photo = createCaptureFile(encodingType);
-        this.imageUri = new CordovaUri(FileProvider.getUriForFile(cordova.getActivity(),
-                applicationId + ".provider",
-                photo));
-        intent.putExtra(android.provider.MediaStore.EXTRA_OUTPUT, imageUri.getCorrectUri());
-        //We can write to this URI, this will hopefully allow us to write files to get to the next step
-        intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+            // Specify file so that large image is captured and returned
+            File photo = createCaptureFile(encodingType);
+            //this.imageUri = Uri.fromFile(photo);
+            this.imageUri = new CordovaUri(FileProvider.getUriForFile(cordova.getActivity(), applicationId + ".provider", photo));
+            intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri.getFileUri());
+            intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+            intent.putExtra("CONFIRM_PICTURE", this.confirmPicture);
+            intent.putExtra("IMAGE_TEXT_MESSAGE", this.imageTitle);
+            intent.putExtra("CAMERA_DIRECTION", this.cameraDirection);
+            intent.putExtra("TITLE_FONT_SIZE", this.titleFontSize);
+            intent.putExtra("TITLE_FONT_COLOR", this.titleFontColor);
+            intent.putExtra("TITLE_BACKGROUND_COLOR", this.titleBackgroundColor);
 
-        if (this.cordova != null) {
-            // Let's check to make sure the camera is actually installed. (Legacy Nexus 7 code)
-            PackageManager mPm = this.cordova.getActivity().getPackageManager();
-            if(intent.resolveActivity(mPm) != null)
-            {
+            if (this.cordova != null) {
+                this.cordova.startActivityForResult(this, intent, (CAMERA + 1) * 16 + returnType + 1);
+            }
+        } else { // If memory is not a problem, open Device Camera App
 
-                this.cordova.startActivityForResult((CordovaPlugin) this, intent, (CAMERA + 1) * 16 + returnType + 1);
+            // Let's use the intent and see what happens
+            Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+
+            // Specify file so that large image is captured and returned
+            File photo = createCaptureFile(encodingType);
+            this.imageUri = new CordovaUri(FileProvider.getUriForFile(cordova.getActivity(),
+                    applicationId + ".provider",
+                    photo));
+            intent.putExtra(android.provider.MediaStore.EXTRA_OUTPUT, imageUri.getCorrectUri());
+            //We can write to this URI, this will hopefully allow us to write files to get to the next step
+            intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+
+            if (this.cordova != null) {
+                // Let's check to make sure the camera is actually installed. (Legacy Nexus 7 code)
+                PackageManager mPm = this.cordova.getActivity().getPackageManager();
+                if(intent.resolveActivity(mPm) != null) {
+                    this.cordova.startActivityForResult((CordovaPlugin) this, intent, (CAMERA + 1) * 16 + returnType + 1);
+                } else {
+                    LOG.d(LOG_TAG, "Error: You don't have a default camera.  Your device may not be CTS complaint.");
+                }
             }
             else
-            {
-                LOG.d(LOG_TAG, "Error: You don't have a default camera.  Your device may not be CTS complaint.");
-            }
+               LOG.d(LOG_TAG, "ERROR: You must use the CordovaInterface for this to work correctly. Please implement it in your activity");
         }
-//        else
-//            LOG.d(LOG_TAG, "ERROR: You must use the CordovaInterface for this to work correctly. Please implement it in your activity");
     }
 
     /**
@@ -1402,6 +1456,4 @@ public class CameraLauncher extends CordovaPlugin implements MediaScannerConnect
         return path;
 
     }
-
-
 }
