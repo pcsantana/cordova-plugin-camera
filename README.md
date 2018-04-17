@@ -1,3 +1,11 @@
+# note
+This is a fork of the official camera plugin from Apache.
+The main feature of this fork, is to prevent the Cordova activity to be killed when run on Android phones with low memory. In this scenario, if the device has low memory, then a foreground Camera Activity is presented, instead of the device camera app.
+
+The foreground camera activity is adapted from https://github.com/jesusbaqui/cordova-plugin-inappcamera, but with UI and code improvements.
+
+As the official camera plugins says, to prevent out of memory errors, try to use Camera.DestinationType.FILE_URI.
+
 ---
 title: Camera
 description: Take pictures with the device camera.
@@ -355,11 +363,11 @@ Matches iOS UIPopoverArrowDirection constants to specify arrow location on popov
 
 | Name | Type | Default |
 | --- | --- | --- |
-| ARROW_UP | <code>number</code> | <code>1</code> | 
-| ARROW_DOWN | <code>number</code> | <code>2</code> | 
-| ARROW_LEFT | <code>number</code> | <code>4</code> | 
-| ARROW_RIGHT | <code>number</code> | <code>8</code> | 
-| ARROW_ANY | <code>number</code> | <code>15</code> | 
+| ARROW_UP | <code>number</code> | <code>1</code> |
+| ARROW_DOWN | <code>number</code> | <code>2</code> |
+| ARROW_LEFT | <code>number</code> | <code>4</code> |
+| ARROW_RIGHT | <code>number</code> | <code>8</code> |
+| ARROW_ANY | <code>number</code> | <code>15</code> |
 
 <a name="module_Camera.Direction"></a>
 
