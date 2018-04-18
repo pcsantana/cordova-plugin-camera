@@ -51,7 +51,7 @@ public class CameraActivity extends Activity implements SensorEventListener {
     private SurfaceHolder previewHolder = null;
     private Camera camera = null;
     private boolean inPreview = false;
-    private boolean cameraConfigured = false;
+//    private boolean cameraConfigured = false;
     private int led = 0;
     private int cam = 0;
     private int maxZoomLevel = 0;
@@ -253,7 +253,7 @@ public class CameraActivity extends Activity implements SensorEventListener {
                     if (isFlash) flashButton.setVisibility(View.VISIBLE);
                     if (isFlash) flashButton.setBackgroundResource(imgFlashNo);
                 }
-                cameraConfigured = false;
+                //cameraConfigured = false;
                 restartPreview(cam);
             }
 
@@ -278,7 +278,7 @@ public class CameraActivity extends Activity implements SensorEventListener {
                        if (isFlash) flashButton.setVisibility(View.VISIBLE);
                        if (isFlash) flashButton.setBackgroundResource(imgFlashNo);
                      }
-                     cameraConfigured = false;
+                     //cameraConfigured = false;
                      restartPreview(cam);
                    }
                    catch (Exception e) {
@@ -447,6 +447,7 @@ public class CameraActivity extends Activity implements SensorEventListener {
                 if (confirmPic) {
                     Intent intent = new Intent(getApplicationContext(), PreviewActivity.class);
                     intent.putExtra(MediaStore.EXTRA_OUTPUT, fileUri);
+                    intent.putExtra("degrees", degrees);
                     startActivityForResult(intent, REVIEW_PIC_REQUEST);
                 } else {
                     setResult(Activity.RESULT_OK);
@@ -534,7 +535,7 @@ public class CameraActivity extends Activity implements SensorEventListener {
                 Log.e("PreviewDemo-callback","Ex in setPreviewDisplay()", t);
             }
 
-            if (!cameraConfigured) {
+            //if (!cameraConfigured) {
                 Camera.Parameters parameters = camera.getParameters();
                 Camera.Size size = getBestPreviewSize(parameters);
                 Camera.Size pictureSize = getSmallestPictureSize(parameters);
@@ -565,10 +566,10 @@ public class CameraActivity extends Activity implements SensorEventListener {
                             parameters.setWhiteBalance(Camera.Parameters.WHITE_BALANCE_AUTO);
                         }
                     }
-                    cameraConfigured=true;
+                    //cameraConfigured=true;
                     camera.setParameters(parameters);
                 }
-            }
+            //}
         }
     }
 
@@ -591,7 +592,8 @@ public class CameraActivity extends Activity implements SensorEventListener {
     }
 
     private void startPreview() {
-        if (cameraConfigured && camera != null) {
+//        if (cameraConfigured && camera != null) {
+        if (camera != null) {
             camera.setDisplayOrientation(90);
             camera.startPreview();
             inPreview = true;
@@ -602,10 +604,11 @@ public class CameraActivity extends Activity implements SensorEventListener {
         public void surfaceCreated(SurfaceHolder holder) {
         }
 
-        public void surfaceChanged(SurfaceHolder holder, int format, int width,
-                                   int height) {
-            if (camera != null) {
-                camera.setDisplayOrientation(90);
+        public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+            try {
+                camera.stopPreview();
+            } catch (Exception e){
+                // ignore: tried to stop a non-existent preview
             }
             initPreview();
             startPreview();
@@ -684,9 +687,7 @@ public class CameraActivity extends Activity implements SensorEventListener {
                     degrees = 0;
                 }
             }
-
         }
-
     }
 
     @Override

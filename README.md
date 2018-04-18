@@ -1,8 +1,8 @@
-# note
+# Fork note
 This is a fork of the official camera plugin from Apache.
-The main feature of this fork, is to prevent the Cordova activity to be killed when run on Android phones with low memory. In this scenario, if the device has low memory, then a foreground Camera Activity is presented, instead of the device camera app.
+The main feature of this fork, is to prevent the Cordova activity to be killed when run on Android phones with low memory. In this scenario, if the device has low memory, a foreground Camera Activity is presented instead of the device camera app.
 
-The foreground camera activity is adapted from https://github.com/jesusbaqui/cordova-plugin-inappcamera, but with UI and code improvements.
+The foreground camera activity is adapted from https://github.com/jesusbaqui/cordova-plugin-inappcamera with UI and code improvements.
 
 As the official camera plugins says, to prevent out of memory errors, try to use Camera.DestinationType.FILE_URI.
 

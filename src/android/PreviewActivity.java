@@ -33,6 +33,7 @@ public class PreviewActivity  extends Activity {
         setContentView(getResources().getIdentifier("preview_layout", "layout", getPackageName()));
 
         Uri fileUri = (Uri) getIntent().getExtras().get(MediaStore.EXTRA_OUTPUT);
+        int degrees = getIntent().getExtras().getInt("degrees");
 
         ImageView imgDisplay = (ImageView) findViewById(getResources().getIdentifier("imgDisplay", "id", getPackageName()));
         Button btnClose = (Button) findViewById(getResources().getIdentifier("btnCancel", "id", getPackageName()));
@@ -42,20 +43,31 @@ public class PreviewActivity  extends Activity {
         try {
           buttonsLayout.setBackgroundColor(Color.argb(60, 0, 0, 0));
 
-          Glide
-            .with(getApplicationContext())
-            .load(fileUri)
-            .centerCrop()
-            .skipMemoryCache(true)
-            .diskCacheStrategy(DiskCacheStrategy.NONE)
-            .crossFade()
-            .into(imgDisplay);
+          if(degrees == 90 || degrees == 270) {
+              Glide
+                  .with(getApplicationContext())
+                  .load(fileUri)
+                  .centerCrop()
+                  .skipMemoryCache(true)
+                  .diskCacheStrategy(DiskCacheStrategy.NONE)
+                  .crossFade()
+                  .into(imgDisplay);
+          } else {
+              Glide
+                  .with(getApplicationContext())
+                  .load(fileUri)
+                  .fitCenter()
+                  .skipMemoryCache(true)
+                  .diskCacheStrategy(DiskCacheStrategy.NONE)
+                  .crossFade()
+                  .into(imgDisplay);
+          }
+
         }
         catch (Exception e) {
           setResult(RESULT_OK);
           finish();
         }
-
 
         btnClose.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {

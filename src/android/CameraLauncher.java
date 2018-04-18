@@ -316,22 +316,21 @@ public class CameraLauncher extends CordovaPlugin implements MediaScannerConnect
         ActivityManager.MemoryInfo memoryInfo = new ActivityManager.MemoryInfo();
         activityManager.getMemoryInfo(memoryInfo);
         long deviceMemory = memoryInfo.totalMem / 1048576L;
-        return deviceMemory < 1500 || memoryInfo.lowMemory;
+        return memoryInfo.lowMemory || deviceMemory < 1400;
     }
 
     public void takePicture(int returnType, int encodingType) {
         // Save the number of images currently on disk for later
         this.numPics = queryImgDB(whichContentStore()).getCount();
 
+        // Specify file so that large image is captured and returned
+        File photo = createCaptureFile(encodingType);
+        this.imageUri = new CordovaUri(FileProvider.getUriForFile(cordova.getActivity(), applicationId + ".provider", photo));
+
         //If device has low memory, open InAppCamera to prevent crash
         if(deviceHasLowMemory()) {
             // Let's use the intent and see what happens
             Intent intent = new Intent(this.cordova.getActivity().getApplicationContext(), CameraActivity.class);
-
-            // Specify file so that large image is captured and returned
-            File photo = createCaptureFile(encodingType);
-            //this.imageUri = Uri.fromFile(photo);
-            this.imageUri = new CordovaUri(FileProvider.getUriForFile(cordova.getActivity(), applicationId + ".provider", photo));
             intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri.getFileUri());
             intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
             intent.putExtra("CONFIRM_PICTURE", this.confirmPicture);
@@ -348,12 +347,6 @@ public class CameraLauncher extends CordovaPlugin implements MediaScannerConnect
 
             // Let's use the intent and see what happens
             Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-
-            // Specify file so that large image is captured and returned
-            File photo = createCaptureFile(encodingType);
-            this.imageUri = new CordovaUri(FileProvider.getUriForFile(cordova.getActivity(),
-                    applicationId + ".provider",
-                    photo));
             intent.putExtra(android.provider.MediaStore.EXTRA_OUTPUT, imageUri.getCorrectUri());
             //We can write to this URI, this will hopefully allow us to write files to get to the next step
             intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
